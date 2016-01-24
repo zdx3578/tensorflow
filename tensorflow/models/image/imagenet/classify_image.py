@@ -108,6 +108,7 @@ class NodeLookup(object):
       uid_to_human[uid] = human_string
 
     # Loads mapping from string UID to integer node ID.
+    global node_id_to_uid
     node_id_to_uid = {}
     proto_as_ascii = gfile.GFile(label_lookup_path).readlines()
     for line in proto_as_ascii:
@@ -116,6 +117,7 @@ class NodeLookup(object):
       if line.startswith('  target_class_string:'):
         target_class_string = line.split(': ')[1]
         node_id_to_uid[target_class] = target_class_string[1:-2]
+#    global node_id_to_uid
 
     # Loads the final mapping of integer node ID to human-readable string
     node_id_to_name = {}
@@ -187,11 +189,11 @@ def run_inference_on_image(image):
 
 
 #    print('   ')
-    print('1', predictions,predictions.shape)
+#    print('1', predictions,predictions.shape)
 
 
     predictions = np.squeeze(predictions)
-    print('2',predictions,predictions.shape)
+#    print('2',predictions,predictions.shape)
 
     # Creates node ID --> English string lookup.
     node_lookup = NodeLookup()
@@ -199,11 +201,12 @@ def run_inference_on_image(image):
     top_k = predictions.argsort()[-FLAGS.num_top_predictions:][::-1]
     print('3',top_k)
     for node_id in top_k:
+      puid=node_id_to_uid[node_id]
       human_string = node_lookup.id_to_string(node_id)
       score = predictions[node_id]
-      print('%s (score = %.5f)' % (human_string, score))
+      print('%s (score = %.5f) %s %s' % (node_id, score, puid, human_string))
  #   print('   ')
-    print('4', predictions,predictions.shape) 
+#    print('4', predictions,predictions.shape) 
 #    print(top_k)
 
 def maybe_download_and_extract():
