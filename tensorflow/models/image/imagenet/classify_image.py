@@ -31,10 +31,6 @@ to use this script to perform image recognition.
 https://tensorflow.org/tutorials/image_recognition/
 """
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os.path
 import re
 import sys
@@ -58,7 +54,7 @@ FLAGS = tf.app.flags.FLAGS
 # imagenet_2012_challenge_label_map_proto.pbtxt:
 #   Text representation of a protocol buffer mapping a label to synset ID.
 tf.app.flags.DEFINE_string(
-    'model_dir', '/tmp/imagenet',
+    'model_dir', './imagenet',
     """Path to classify_image_graph_def.pb, """
     """imagenet_synset_to_human_label_map.txt, and """
     """imagenet_2012_challenge_label_map_proto.pbtxt.""")
@@ -163,6 +159,9 @@ def run_inference_on_image(image):
   # Creates graph from saved GraphDef.
   create_graph()
 
+
+
+
   with tf.Session() as sess:
     # Some useful tensors:
     # 'softmax:0': A tensor containing the normalized prediction across
@@ -175,17 +174,37 @@ def run_inference_on_image(image):
     softmax_tensor = sess.graph.get_tensor_by_name('softmax:0')
     predictions = sess.run(softmax_tensor,
                            {'DecodeJpeg/contents:0': image_data})
+
+#    summary_op = tf.merge_all_summaries()
+#    summary_writer = tf.train.SummaryWriter(FLAGS.model_dir, graph_def=sess.graph_def)
+#    summary_str = sess.run(summary_op)
+#    summary_writer.add_summary(summary_str)
+
+#    w=tf.python.training.summary_io.SummaryWriter( sess.graph_def, FLAGS.model_dir, 'graph.pbtxt')  
+ #   tf.train.SummaryWriter.flush(w)
+  #  tf.train.SummaryWriter.close(w)
+    
+
+
+#    print('   ')
+    print('1', predictions,predictions.shape)
+
+
     predictions = np.squeeze(predictions)
+    print('2',predictions,predictions.shape)
 
     # Creates node ID --> English string lookup.
     node_lookup = NodeLookup()
 
     top_k = predictions.argsort()[-FLAGS.num_top_predictions:][::-1]
+    print('3',top_k)
     for node_id in top_k:
       human_string = node_lookup.id_to_string(node_id)
       score = predictions[node_id]
       print('%s (score = %.5f)' % (human_string, score))
-
+ #   print('   ')
+    print('4', predictions,predictions.shape) 
+#    print(top_k)
 
 def maybe_download_and_extract():
   """Download and extract model tar file."""
@@ -204,11 +223,11 @@ def maybe_download_and_extract():
     print()
     statinfo = os.stat(filepath)
     print('Succesfully downloaded', filename, statinfo.st_size, 'bytes.')
-  tarfile.open(filepath, 'r:gz').extractall(dest_directory)
+  #tarfile.open(filepath, 'r:gz').extractall(dest_directory)
 
 
 def main(_):
-  maybe_download_and_extract()
+  #maybe_download_and_extract()
   image = (FLAGS.image_file if FLAGS.image_file else
            os.path.join(FLAGS.model_dir, 'cropped_panda.jpg'))
   run_inference_on_image(image)
