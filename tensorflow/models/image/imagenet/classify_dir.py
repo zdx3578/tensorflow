@@ -171,15 +171,15 @@ def run_inference_on_image(imagedir):
     #   encoding of the image.
     # Runs the softmax tensor by feeding the image_data as input to the graph.
 
-
+    f=open('/tmp/data/1000TensorflowFileout.txt','a')
     for root, directories, filenames in os.walk(imagedir):
       for filename in filenames: 
 
         lfname =os.path.join(root,filename)
-	print ('       .        .        .         .         .          .') 
-	print lfname
+	#print ('       .        .        .         .         .          .') 
+	print ("tensorflow.imagenet.1000",lfname,root ,filename ) 
+        catlog=root.split('/')[-1]
         image_data = gfile.FastGFile(lfname, 'rb').read()
-
 
 
 
@@ -193,12 +193,18 @@ def run_inference_on_image(imagedir):
         node_lookup = NodeLookup()
 
         top_k = predictions.argsort()[-FLAGS.num_top_predictions:][::-1]
-        print('3',top_k)
+        #print('3',top_k)
+	f.write('#'+catlog+"\n")
         for node_id in top_k:
           puid=node_id_to_uid[node_id]
           human_string = node_lookup.id_to_string(node_id)
           score = predictions[node_id]
-          print('%s (score = %.5f) %s %s' % (node_id, score, puid, human_string))
+          print('%s :  %s : %s : %.5f : %s ' % ('tf.imagenet1000',catlog,puid, score, human_string ))
+	  
+          f.write('(tensorflow1000.'+puid+','+str("%.5f" % score)+')')
+        f.write("\n")
+    f.close()
+
 
 def maybe_download_and_extract():
   """Download and extract model tar file."""
