@@ -209,7 +209,7 @@ def run_inference_on_image(imagedir,test):
                       print('%s :  %s : %s : %.5f : %s ' % ('tf.imagenet1000',catlog,puid, score, human_string ))
 
                       f.write('(tensorflow1000.'+puid+','+str("%.5f" % score)+')')
-                f.write("\n")
+                    f.write("\n")
         f.close()
 
     else:
@@ -246,7 +246,7 @@ def run_inference_on_image(imagedir,test):
                       print('%s :  %s : %s : %.5f : %s ' % ('tf.imagenet1000',catlog,puid, score, human_string ))
 	  
                       f.write('(tensorflow1000.'+puid+','+str("%.5f" % score)+')')
-                f.write("\n")
+                    f.write("\n")
         f.close()
 
 
