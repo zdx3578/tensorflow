@@ -1,3 +1,5 @@
+#python classify_dir.py --iftest True  --image_dir /opt/data/image/img1new/ 
+
 # Copyright 2015 Google Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -65,6 +67,8 @@ tf.app.flags.DEFINE_string('image_dir', '',
                            """Absolute path to image dir.""")
 tf.app.flags.DEFINE_integer('num_top_predictions', 5,
                             """Display this many predictions.""")
+tf.app.flags.DEFINE_string('iftest', 'train',
+                            """if classify test dir: test or train.""")
 
 # pylint: disable=line-too-long
 DATA_URL = 'http://download.tensorflow.org/models/image/imagenet/inception-2015-12-05.tgz'
@@ -148,7 +152,7 @@ def create_graph():
     _ = tf.import_graph_def(graph_def, name='')
 
 
-def run_inference_on_image(imagedir):
+def run_inference_on_image(imagedir,test):
   """Runs inference on an image.
   Args:
     image: Image file name.
@@ -170,40 +174,80 @@ def run_inference_on_image(imagedir):
     # 'DecodeJpeg/contents:0': A tensor containing a string providing JPEG
     #   encoding of the image.
     # Runs the softmax tensor by feeding the image_data as input to the graph.
+    #global root
+    if test == 'test':
+        f=open('/opt/data/1000TensorflowFileout-test.txt','a')
 
-    f=open('/tmp/data/1000TensorflowFileout.txt','a')
-    for root, directories, filenames in os.walk(imagedir):
-      for filename in filenames: 
+        for root, directories, filenames in os.walk(imagedir):
+          #print root
+          #if 'test' not in root:
+              for filename in filenames:
+                #print filename
+                if 'test'  in root:
+                 # print root
+                  if filename not in 'Thumbs.db':
+                    lfname =os.path.join(root,filename)
+                    #print ('       .        .        .         .         .          .') 
+                    print ("tensorflow.imagenet.1000",lfname,root ,filename )
+                    catlog=root.split('/')[-3]
+                    image_data = gfile.FastGFile(lfname, 'rb').read()
 
-        lfname =os.path.join(root,filename)
-	#print ('       .        .        .         .         .          .') 
-	print ("tensorflow.imagenet.1000",lfname,root ,filename ) 
-        catlog=root.split('/')[-1]
-        image_data = gfile.FastGFile(lfname, 'rb').read()
+                    softmax_tensor = sess.graph.get_tensor_by_name('softmax:0')
+                    predictions = sess.run(softmax_tensor,
+                                   {'DecodeJpeg/contents:0': image_data})
 
+                    predictions = np.squeeze(predictions)
+                    # Creates node ID --> English string lookup.
+                    node_lookup = NodeLookup()
+                    top_k = predictions.argsort()[-FLAGS.num_top_predictions:][::-1]
 
+                    f.write('#'+catlog+"\n")
+                    for node_id in top_k:
+                      puid=node_id_to_uid[node_id]
+                      human_string = node_lookup.id_to_string(node_id)
+                      score = predictions[node_id]
+                      print('%s :  %s : %s : %.5f : %s ' % ('tf.imagenet1000',catlog,puid, score, human_string ))
 
-        softmax_tensor = sess.graph.get_tensor_by_name('softmax:0')
-        predictions = sess.run(softmax_tensor,
-                           {'DecodeJpeg/contents:0': image_data})
+                      f.write('(tensorflow1000.'+puid+','+str("%.5f" % score)+')')
+                f.write("\n")
+        f.close()
 
-        predictions = np.squeeze(predictions)
+    else:
+        f=open('/opt/data/1000TensorflowFileout.txt','a')
 
-        # Creates node ID --> English string lookup.
-        node_lookup = NodeLookup()
+        for root, directories, filenames in os.walk(imagedir):
+          #print root
+          #if 'test' not in root:
+              for filename in filenames:
+                #print filename
+                if 'test' not in root:
+                 # print root
+                  if filename not in 'Thumbs.db':
+                    lfname =os.path.join(root,filename)
+                    #print ('       .        .        .         .         .          .') 
+                    print ("tensorflow.imagenet.1000",lfname,root ,filename ) 
+                    catlog=root.split('/')[-2]
+                    image_data = gfile.FastGFile(lfname, 'rb').read()
+    
+                    softmax_tensor = sess.graph.get_tensor_by_name('softmax:0')
+                    predictions = sess.run(softmax_tensor,
+                                   {'DecodeJpeg/contents:0': image_data})
 
-        top_k = predictions.argsort()[-FLAGS.num_top_predictions:][::-1]
-        #print('3',top_k)
-	f.write('#'+catlog+"\n")
-        for node_id in top_k:
-          puid=node_id_to_uid[node_id]
-          human_string = node_lookup.id_to_string(node_id)
-          score = predictions[node_id]
-          print('%s :  %s : %s : %.5f : %s ' % ('tf.imagenet1000',catlog,puid, score, human_string ))
+                    predictions = np.squeeze(predictions)
+                    # Creates node ID --> English string lookup.
+                    node_lookup = NodeLookup()
+                    top_k = predictions.argsort()[-FLAGS.num_top_predictions:][::-1]
+
+                    f.write('#'+catlog+"\n")
+                    for node_id in top_k:
+                      puid=node_id_to_uid[node_id]
+                      human_string = node_lookup.id_to_string(node_id)
+                      score = predictions[node_id]
+                      print('%s :  %s : %s : %.5f : %s ' % ('tf.imagenet1000',catlog,puid, score, human_string ))
 	  
-          f.write('(tensorflow1000.'+puid+','+str("%.5f" % score)+')')
-        f.write("\n")
-    f.close()
+                      f.write('(tensorflow1000.'+puid+','+str("%.5f" % score)+')')
+                f.write("\n")
+        f.close()
 
 
 def maybe_download_and_extract():
@@ -231,8 +275,10 @@ def main(_):
   image = (FLAGS.image_file if FLAGS.image_file else
            os.path.join(FLAGS.model_dir, 'cropped_panda.jpg'))
   imagedir = (FLAGS.image_dir if FLAGS.image_dir else tf.logging.fatal('main  Dir does not exist %s', image_dir) ) 
-
-  run_inference_on_image(imagedir)
+  if FLAGS.iftest == 'test':
+    run_inference_on_image(imagedir,'test')
+  else:
+    run_inference_on_image(imagedir,'train')
 
 
 if __name__ == '__main__':
